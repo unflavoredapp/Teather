@@ -1,0 +1,29 @@
+[Unit]
+Description=Tetherless Helper API
+After=network-online.target usbmuxd.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tetherless
+Group=tetherless
+EnvironmentFile=/etc/tetherless-helper.env
+WorkingDirectory=/opt/tetherless-helper
+ExecStart=/opt/tetherless-helper/tetherless-helper serve --host 127.0.0.1 --port 8787
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/tetherless-helper
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+
+[Install]
+WantedBy=multi-user.target

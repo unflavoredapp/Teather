@@ -1,0 +1,44 @@
+name: Build unsigned iOS IPA
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'iOS/**'
+      - '.github/workflows/ios-unsigned-ipa.yml'
+
+jobs:
+  build-unsigned-ipa:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer || true
+      - name: Build unsigned iOS app
+        run: |
+          xcodebuild \
+            -project iOS/Tetherless.xcodeproj \
+            -scheme Tetherless \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY='' \
+            build
+      - name: Package unsigned IPA
+        run: |
+          APP="build/DerivedData/Build/Products/Release-iphoneos/Tetherless.app"
+          test -d "$APP"
+          mkdir -p build/ipa/Payload
+          ditto "$APP" build/ipa/Payload/Tetherless.app
+          (cd build/ipa && /usr/bin/zip -qry ../../Tetherless-unsigned.ipa Payload)
+          file Tetherless-unsigned.ipa
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tetherless-unsigned-IPA
+          path: Tetherless-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14

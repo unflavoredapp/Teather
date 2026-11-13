@@ -1,0 +1,4 @@
+TetherlessHelper 0.1.0
+Target: Linux x86_64
+Built with Swift 6.2.1
+Build configuration: release
