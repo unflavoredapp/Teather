@@ -1,0 +1,31 @@
+name: Build Tetherless Decrypt unsigned IPA
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Apps/TetherlessDecrypt/**'
+      - 'Apps/TetherlessDecrypt.xcodeproj/**'
+      - '.github/workflows/build-tetherless-decrypt.yml'
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build unsigned app
+        run: |
+          xcodebuild -project Apps/TetherlessDecrypt.xcodeproj -scheme TetherlessDecrypt -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/TetherlessDecrypt \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build
+      - name: Package IPA
+        run: |
+          APP="build/TetherlessDecrypt/Build/Products/Release-iphoneos/TetherlessDecrypt.app"
+          test -d "$APP"
+          mkdir -p out/TetherlessDecrypt/Payload
+          ditto "$APP" out/TetherlessDecrypt/Payload/TetherlessDecrypt.app
+          (cd out/TetherlessDecrypt && zip -qry ../../TetherlessDecrypt.ipa Payload)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TetherlessDecrypt-unsigned-IPA
+          path: TetherlessDecrypt.ipa
+          if-no-files-found: error
+          retention-days: 14

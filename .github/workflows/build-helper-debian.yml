@@ -1,0 +1,31 @@
+name: Build TetherlessHelper for Debian
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Package.swift'
+      - 'Sources/**'
+      - 'Tests/**'
+      - '.github/workflows/build-helper-debian.yml'
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '6.2.1'
+      - name: Build release executable
+        run: swift build -c release
+      - name: Stage Debian artifact
+        run: |
+          mkdir -p dist
+          cp .build/release/tetherless-helper dist/tetherless-helper-linux-x86_64
+          chmod +x dist/tetherless-helper-linux-x86_64
+          tar -czf TetherlessHelper-debian-x86_64.tar.gz dist/tetherless-helper-linux-x86_64 deploy README.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TetherlessHelper-debian-x86_64
+          path: TetherlessHelper-debian-x86_64.tar.gz
+          if-no-files-found: error
+          retention-days: 14
