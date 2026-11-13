@@ -25,4 +25,8 @@ Not taken from that code: anything related to App Store downloading, FairPlay de
 payments, staff or licensing gates, or the disassembler. The Decrypt tab in this project
 is a mockup and is not connected to any of it.
 
-Check each upstream project's own license before distributing a build.
+The free Apple ID signing flow (`Sideloader/AppleID/`) follows the approach of
+AltSign / AltStore (Riley Testut) for talking to Apple's developer services; the
+code here is an independent implementation. A GrandSlam/ADI auth engine (e.g. the
+apple-private-apis / provision projects, or AltSign's own) must be vendored to make
+sign-in run. Check each upstream project's own license before distributing a build.

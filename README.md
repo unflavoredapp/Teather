@@ -2,7 +2,7 @@
 
 A SwiftUI iOS app for importing and installing your own `.ipa` files, with tabs **Pair**, **Files**, **Library**, **Decrypt** and **Settings**, in the glass-on-gradient look of your screenshots.
 
-The device connection (local VPN tunnel, on-device pairing, install) is real and adapted from the AirShare device layer you supplied. IPA signing runs locally with the bundled zsign engine (Custom Certificate). Apple ID login is still a stub. The Decrypt tab is a mockup. This project does **not** include App Store downloading or FairPlay decryption.
+The device connection (local VPN tunnel, on-device pairing, install) is real and adapted from the AirShare device layer you supplied. IPA signing runs locally with the bundled zsign engine. Custom Certificate works today. The free Apple ID path (AltStore-style: mint a development certificate and provisioning profile from your Apple ID, then sign) is fully wired except for the GrandSlam auth engine, which needs a device + anisette to run. The Decrypt tab is a mockup. This project does **not** include App Store downloading or FairPlay decryption.
 
 ## Build
 
@@ -37,10 +37,24 @@ No Mac? `.github/workflows/build.yml` builds unsigned IPAs on a GitHub macOS run
 | Protocol | State | Needs |
 |---|---|---|
 | `DeviceInstaller` | **Real** (`NativeDeviceInstaller`) | |
-| `IPASigner` | **Real** (`LocalZSignSigner`, zsign) | Custom Certificate only |
-| `AppleAccountService` | Stub | Apple developer-services login, 2FA, free-account cert / App ID / profile (AltSign or similar) |
+| `IPASigner` | **Real** (`AppleIDSigner`/`LocalZSignSigner`, zsign) | Apple ID path needs the GrandSlam engine linked |
+| `AppleAccountService` | **Real** (`AppleIDAccountService`) | Developer Services client, CSR/.p12, App ID + profile are real; only GrandSlam auth (`AppleAuth.swift`) needs the vendored ADI engine |
 
 Check each library's license before bundling it. Some are AGPL.
+
+## Free Apple ID signing
+
+`Sideloader/AppleID/` implements the AltStore-style flow: authenticate, mint a
+development certificate (CSR generated on device via OpenSSL), register the app's
+App ID + this device, download a provisioning profile, and sign with zsign. The
+Apple Developer Services calls, the CSR/`.p12` assembly and the profile download
+are all real and hit Apple's production endpoints.
+
+The one piece that can't run or be tested here is Apple's **GrandSlam** login
+(SRP-6a + 2FA + anisette/ADI). It lives behind `AppleAuthenticating`
+(`AppleAuth.swift`); link a vendored ADI/GSA engine through the `Native/` pipeline
+and flip `BridgedGrandSlamClient.engineLinked`. Until then, sign-in reports that the
+auth engine isn't linked and the Custom Certificate path remains the working signer.
 
 ## Decrypt tab and helper app (mockups only)
 

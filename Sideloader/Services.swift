@@ -47,11 +47,20 @@ struct StubAccountService: AppleAccountService {
     func signOut() async {}
 }
 
-/// Holds the active service implementations. Swap these in `SideloaderApp`.
-/// The installer is real (local tunnel + pairing + installation_proxy); signing and
-/// Apple ID login are still stubs.
+/// Holds the active service implementations. The installer is real (local tunnel +
+/// pairing + installation_proxy). Signing is real via zsign: Custom Certificate works
+/// today; the Apple ID path works once the GrandSlam auth engine is linked
+/// (see `AppleAuth.swift`). The signer and account share one `AppleIDAccountService`
+/// so a sign-in is visible to the signer.
 struct Services {
-    var signer: IPASigner = LocalZSignSigner()
+    let appleAccount: AppleIDAccountService
+    var signer: IPASigner
     var installer: DeviceInstaller = NativeDeviceInstaller()
-    var account: AppleAccountService = StubAccountService()
+    var account: AppleAccountService { appleAccount }
+
+    @MainActor init() {
+        let account = AppleIDAccountService()
+        appleAccount = account
+        signer = AppleIDSigner(account: account)
+    }
 }

@@ -60,81 +60,120 @@ private struct Divider1: View {
     var body: some View { Rectangle().fill(.white.opacity(0.12)).frame(height: 1) }
 }
 
-// MARK: - Developer Account (mock, read-only placeholder data)
+// MARK: - Developer Account (live data from the Apple ID account)
 
 struct DeveloperAccountView: View {
-    // Placeholder data only — this screen does not talk to Apple.
+    @EnvironmentObject private var apple: AppleIDAccountService
+    @EnvironmentObject private var account: AccountStore
+    @State private var loadError: String?
+    @State private var busy = false
+
     var body: some View {
         DetailScreen(title: "Developer Account") {
-            GlassCard {
-                HStack(spacing: 14) {
-                    Image(systemName: "person.crop.circle.fill").font(.title).foregroundStyle(Theme.success)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("airc0re@icloud.com").font(.title3.weight(.semibold)).foregroundStyle(.white)
-                        Text("Apple ID").font(.callout).foregroundStyle(.white.opacity(0.55))
-                    }
-                    Spacer()
+            if apple.team == nil {
+                GlassCard {
+                    StatusRow(kind: .info, title: "Not signed in",
+                              subtitle: "Sign in with your Apple ID in Settings to load your certificates, App IDs and devices.")
                 }
-                Divider1().padding(.vertical, 6)
-                HStack {
-                    Text("Team").font(.callout).foregroundStyle(.white.opacity(0.55))
-                    Spacer()
-                    Text("Rodger Williams · GVZJWHFTS9").font(.callout.weight(.medium)).foregroundStyle(.white)
+            } else {
+                accountCard
+                certificatesCard
+                appIDsCard
+                devicesCard
+            }
+            if let loadError {
+                GlassCard { Text(loadError).font(.footnote).foregroundStyle(.yellow) }
+            }
+        }
+        .task { await reload() }
+    }
+
+    private func reload() async {
+        guard apple.team != nil else { return }
+        busy = true; defer { busy = false }
+        do { try await apple.refresh() } catch { loadError = error.localizedDescription }
+    }
+
+    private var accountCard: some View {
+        GlassCard {
+            HStack(spacing: 14) {
+                Image(systemName: "person.crop.circle.fill").font(.title).foregroundStyle(Theme.success)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(account.email ?? "Apple ID").font(.title3.weight(.semibold)).foregroundStyle(.white)
+                    Text("Apple ID").font(.callout).foregroundStyle(.white.opacity(0.55))
+                }
+                Spacer()
+            }
+            Divider1().padding(.vertical, 6)
+            HStack {
+                Text("Team").font(.callout).foregroundStyle(.white.opacity(0.55))
+                Spacer()
+                if let team = apple.team {
+                    Text("\(team.name) · \(team.id)").font(.callout.weight(.medium)).foregroundStyle(.white)
                 }
             }
+        }
+    }
 
-            GlassCard {
-                SectionHeader(title: "Signing certificates", trailing: "1")
-                Text("Certificates are shared across tools on your account — one slot each for Tetherless, Xcode, other signers. Revoking one breaks whatever it signed.")
-                    .font(.footnote).foregroundStyle(.white.opacity(0.55))
+    private var certificatesCard: some View {
+        GlassCard {
+            SectionHeader(title: "Signing certificates", trailing: "\(apple.certificates.count)")
+            Text("Certificates are shared across tools on your account — one slot each for Tetherless, Xcode, other signers. Revoking one breaks whatever it signed.")
+                .font(.footnote).foregroundStyle(.white.opacity(0.55))
+            ForEach(apple.certificates) { cert in
                 Divider1().padding(.vertical, 4)
                 HStack {
-                    Text("iOS Development: Rodger Will…").font(.callout.weight(.medium)).foregroundStyle(.white).lineLimit(1)
+                    Text(cert.name).font(.callout.weight(.medium)).foregroundStyle(.white).lineLimit(1)
                     Spacer()
                     Text("Tetherless").font(.caption.weight(.semibold)).foregroundStyle(Theme.accent)
                 }
-                Text("Expires Nov 13, 2027").font(.footnote).foregroundStyle(.white.opacity(0.5))
-                Text("Serial 2507C38BDFB4474E13549031D30362D3").font(.footnote).foregroundStyle(.white.opacity(0.5))
-                Button { } label: {
+                if let expiry = cert.expiry {
+                    Text("Expires \(expiry.formatted(date: .abbreviated, time: .omitted))")
+                        .font(.footnote).foregroundStyle(.white.opacity(0.5))
+                }
+                Text("Serial \(cert.serialNumber)").font(.footnote).foregroundStyle(.white.opacity(0.5)).lineLimit(1)
+                Button {
+                    Task { busy = true; defer { busy = false }
+                        do { try await apple.revoke(certificate: cert) } catch { loadError = error.localizedDescription } }
+                } label: {
                     Label("Revoke", systemImage: "trash").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(SecondaryButtonStyle())
+                .disabled(busy)
                 .padding(.top, 4)
             }
+        }
+    }
 
-            GlassCard {
-                SectionHeader(title: "App IDs", trailing: "5")
-                Text("5 registered. Apple lets a free account register about 10 new identifiers every 7 days — deleting one frees the name, not that weekly allowance.")
-                    .font(.footnote).foregroundStyle(.white.opacity(0.55))
-                ForEach(Self.appIDs, id: \.0) { item in
-                    Divider1().padding(.vertical, 4)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(item.0).font(.callout.weight(.medium)).foregroundStyle(.white)
-                        Text(item.1).font(.footnote).foregroundStyle(.white.opacity(0.5)).lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-
-            GlassCard {
-                SectionHeader(title: "Devices", trailing: "1")
+    private var appIDsCard: some View {
+        GlassCard {
+            SectionHeader(title: "App IDs", trailing: "\(apple.appIDs.count)")
+            Text("Apple lets a free account register about 10 new identifiers every 7 days — deleting one frees the name, not that weekly allowance.")
+                .font(.footnote).foregroundStyle(.white.opacity(0.55))
+            ForEach(apple.appIDs) { item in
                 Divider1().padding(.vertical, 4)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Tetherless device").font(.callout.weight(.medium)).foregroundStyle(.white)
-                    Text("00008110-000209003C60E01E").font(.footnote).foregroundStyle(.white.opacity(0.5))
+                    Text(item.name).font(.callout.weight(.medium)).foregroundStyle(.white)
+                    Text(item.identifier).font(.footnote).foregroundStyle(.white.opacity(0.5)).lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
 
-    private static let appIDs: [(String, String)] = [
-        ("Tetherless Decrypt", "com.tetherless.decrypthelper.GVZJWHFTS9"),
-        ("Tetherless App 1", "com.roblox.robloxmobile.GVZJWHFTS9.RBWidgetExtension"),
-        ("Tetherless App", "com.roblox.robloxmobile.GVZJWHFTS9"),
-        ("Tetherless App", "com.ipaside.tetherless.GVZJWHFTS9"),
-        ("Tetherless App 2", "com.roblox.robloxmobile.GV…BNotificationServiceExtension")
-    ]
+    private var devicesCard: some View {
+        GlassCard {
+            SectionHeader(title: "Devices", trailing: "\(apple.devices.count)")
+            ForEach(apple.devices) { device in
+                Divider1().padding(.vertical, 4)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(device.name).font(.callout.weight(.medium)).foregroundStyle(.white)
+                    Text(device.udid).font(.footnote).foregroundStyle(.white.opacity(0.5))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
 }
 
 // MARK: - Store Access (mock)

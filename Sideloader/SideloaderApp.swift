@@ -7,10 +7,10 @@ struct SideloaderApp: App {
     @StateObject private var certificates = CertificateStore()
     @StateObject private var account = AccountStore()
 
-    /// Swap the stubs for real implementations here (see README).
-    private let services = Services()
+    private let services: Services
 
     init() {
+        services = Services()
         // Must be registered before launch finishes so iOS 26+ can continue pairing in the background.
         DevicePairingService.registerBackgroundTask()
     }
@@ -22,6 +22,7 @@ struct SideloaderApp: App {
                 .environmentObject(pairing)
                 .environmentObject(certificates)
                 .environmentObject(account)
+                .environmentObject(services.appleAccount)
                 .preferredColorScheme(.dark)
                 .onOpenURL { url in
                     // "Open in…" from Files or Safari
