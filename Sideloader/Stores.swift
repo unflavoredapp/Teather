@@ -288,6 +288,26 @@ final class CertificateStore: ObservableObject {
         profileExpiry = nil
     }
 
+    /// Files and password for the signer; safe to call off the main actor.
+    nonisolated static func signingMaterial() -> (p12: URL, profile: URL, password: String)? {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Certificates", isDirectory: true)
+        let p12 = base.appendingPathComponent("signing.p12")
+        let prof = base.appendingPathComponent("signing.mobileprovision")
+        let query: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: "com.example.sideloader.p12",
+            kSecReturnData: true,
+            kSecMatchLimit: kSecMatchLimitOne
+        ]
+        var out: CFTypeRef?
+        guard FileManager.default.fileExists(atPath: p12.path),
+              FileManager.default.fileExists(atPath: prof.path),
+              SecItemCopyMatching(query as CFDictionary, &out) == errSecSuccess,
+              let data = out as? Data, let pw = String(data: data, encoding: .utf8) else { return nil }
+        return (p12, prof, pw)
+    }
+
     func loadPassword() -> String? {
         let query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,

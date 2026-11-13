@@ -51,7 +51,7 @@ struct StubAccountService: AppleAccountService {
 /// The installer is real (local tunnel + pairing + installation_proxy); signing and
 /// Apple ID login are still stubs.
 struct Services {
-    var signer: IPASigner = StubSigner()
+    var signer: IPASigner = LocalZSignSigner()
     var installer: DeviceInstaller = NativeDeviceInstaller()
     var account: AppleAccountService = StubAccountService()
 }

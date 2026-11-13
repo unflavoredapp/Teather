@@ -17,6 +17,10 @@ Upstream projects those files build on, fetched at pinned revisions at build tim
 - **IDeviceKit** by khcrysalis (revision pinned in `.github/scripts/fetch_devicekit.py`)
 - The Rust pairing bridge header credits Ksign.
 
+Signing: `Sideloader/ZSign/*` is the zsign engine (Feather/zsign fork) copied from the supplied
+project; it links OpenSSL through the `OpenSSL-Swift-Package`. Check zsign's and OpenSSL's licenses
+before distributing a build.
+
 Not taken from that code: anything related to App Store downloading, FairPlay decryption,
 payments, staff or licensing gates, or the disassembler. The Decrypt tab in this project
 is a mockup and is not connected to any of it.

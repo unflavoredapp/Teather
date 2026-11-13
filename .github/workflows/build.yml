@@ -29,10 +29,10 @@ jobs:
           key: native-${{ runner.os }}-${{ steps.native.outputs.key }}
 
       - name: Bootstrap native layer and generate project
-        run: ./scripts/bootstrap.sh
+        run: bash scripts/bootstrap.sh
 
       - name: Build and package
-        run: ./scripts/package-ipa.sh
+        run: bash scripts/package-ipa.sh
 
       - uses: actions/upload-artifact@v4
         with:

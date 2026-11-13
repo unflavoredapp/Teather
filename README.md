@@ -2,7 +2,7 @@
 
 A SwiftUI iOS app for importing and installing your own `.ipa` files, with tabs **Pair**, **Files**, **Library**, **Decrypt** and **Settings**, in the glass-on-gradient look of your screenshots.
 
-The device connection (local VPN tunnel, on-device pairing, install) is real and adapted from the AirShare device layer you supplied. IPA signing and Apple ID login are still stubs. The Decrypt tab is a mockup. This project does **not** include App Store downloading or FairPlay decryption.
+The device connection (local VPN tunnel, on-device pairing, install) is real and adapted from the AirShare device layer you supplied. IPA signing runs locally with the bundled zsign engine (Custom Certificate). Apple ID login is still a stub. The Decrypt tab is a mockup. This project does **not** include App Store downloading or FairPlay decryption.
 
 ## Build
 
@@ -23,7 +23,7 @@ No Mac? `.github/workflows/build.yml` builds unsigned IPAs on a GitHub macOS run
 - **Built-in mode** starts the `TetherlessTunnel` packet-tunnel extension. The app and the extension must both be signed with a profile that authorizes the Network Extension entitlement `packet-tunnel-provider` (paid developer account, or a custom certificate whose profile includes it). A free Apple ID cannot get this entitlement.
 - **On-device pairing** needs iOS 27 or later, Developer Mode, Local Network permission, and a one-time code entered under Settings → Privacy & Security → Developer Mode.
 - **Manual mode** works on earlier iOS: import a pairing file on the Pair tab and run your own local VPN.
-- Apps must be **signed** with a certificate this device trusts before install. Signing is not implemented yet (see below); use **Install as-is** in the Library for IPAs that are already signed.
+- Apps must be **signed** with a certificate this device trusts. Import a `.p12` + `.mobileprovision` in Settings (Custom Certificate) and use **Sign & Install**, or use **Install as-is** for IPAs that are already signed.
 
 ## What works now
 
@@ -37,7 +37,7 @@ No Mac? `.github/workflows/build.yml` builds unsigned IPAs on a GitHub macOS run
 | Protocol | State | Needs |
 |---|---|---|
 | `DeviceInstaller` | **Real** (`NativeDeviceInstaller`) | |
-| `IPASigner` | Stub | Re-sign Mach-O binaries with a cert + profile (zsign or similar) |
+| `IPASigner` | **Real** (`LocalZSignSigner`, zsign) | Custom Certificate only |
 | `AppleAccountService` | Stub | Apple developer-services login, 2FA, free-account cert / App ID / profile (AltSign or similar) |
 
 Check each library's license before bundling it. Some are AGPL.
