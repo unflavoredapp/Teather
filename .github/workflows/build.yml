@@ -1,0 +1,40 @@
+name: Build unsigned IPAs
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Fingerprint native inputs
+        id: native
+        run: echo "key=${{ hashFiles('Native/Device/**', '.github/scripts/build_device_native.py', '.github/scripts/fetch_devicekit.py') }}" >> "$GITHUB_OUTPUT"
+
+      - name: Cache native device build
+        uses: actions/cache@v4
+        with:
+          path: |
+            IDeviceKit
+            .build/device-native
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: native-${{ runner.os }}-${{ steps.native.outputs.key }}
+
+      - name: Bootstrap native layer and generate project
+        run: ./scripts/bootstrap.sh
+
+      - name: Build and package
+        run: ./scripts/package-ipa.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tetherless-unsigned-IPAs
+          path: build/ipa/*.ipa

@@ -1,0 +1,113 @@
+name: Sideloader
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "17.0"
+packages:
+  ZIPFoundation:
+    url: https://github.com/weichsel/ZIPFoundation
+    from: 0.9.19
+  # Created by `scripts/bootstrap.sh` (fetches the pinned IDeviceKit, applies the
+  # device overlays and builds IDevice.xcframework). Run it BEFORE `xcodegen generate`.
+  IDeviceKit:
+    path: IDeviceKit
+targets:
+  Sideloader:
+    type: application
+    platform: iOS
+    sources: [Sideloader]
+    dependencies:
+      - package: ZIPFoundation
+      - package: IDeviceKit
+        product: IDeviceSwift
+      - package: IDeviceKit
+        product: IDevice
+      - target: TetherlessTunnel
+        embed: true
+    entitlements:
+      path: Sideloader/Sideloader.entitlements
+    info:
+      path: Sideloader/Info.plist
+      properties:
+        CFBundleDisplayName: Tetherless
+        UILaunchScreen: {}
+        UISupportsDocumentBrowser: false
+        LSSupportsOpeningDocumentsInPlace: true
+        UIFileSharingEnabled: true
+        # On-device pairing advertises a Bonjour service and needs Local Network access.
+        NSLocalNetworkUsageDescription: Tetherless uses the local network to pair with this device for on-device app installation.
+        NSBonjourServices:
+          - _remotepairing-pairable-host._tcp
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        BGTaskSchedulerPermittedIdentifiers:
+          - $(PRODUCT_BUNDLE_IDENTIFIER).userTask.*
+        CFBundleURLTypes:
+          - CFBundleURLName: com.example.sideloader
+            CFBundleURLSchemes: [sideloader]
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: iOS App
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [com.apple.itunes.ipa]
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: com.apple.itunes.ipa
+            UTTypeDescription: iOS App Archive
+            UTTypeConformsTo: [public.zip-archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [ipa]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.sideloader
+        SWIFT_VERSION: "5.0"
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+
+  # Local-loopback packet tunnel (reflects a private /32 back to the device) so the
+  # app can reach this device's own services. Needs a profile that authorizes the
+  # Network Extension "packet-tunnel-provider" entitlement (paid developer account
+  # or a custom certificate whose profile includes it).
+  TetherlessTunnel:
+    type: app-extension
+    platform: iOS
+    sources: [TetherlessTunnel]
+    entitlements:
+      path: TetherlessTunnel/TetherlessTunnel.entitlements
+    info:
+      path: TetherlessTunnel/Info.plist
+      properties:
+        CFBundleDisplayName: Tetherless Tunnel
+        TetherlessLocalDeviceTunnel: true
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.networkextension.packet-tunnel
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).PacketTunnelProvider
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.sideloader.tunnel
+        SWIFT_VERSION: "5.0"
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+
+  # Mockup helper app. Install it alongside Tetherless; the Decrypt tab's
+  # "Done" button jumps to it through the sideloaderhelper:// URL scheme.
+  SideloaderHelper:
+    type: application
+    platform: iOS
+    sources:
+      - SideloaderHelper
+      - Sideloader/Theme.swift
+    info:
+      path: SideloaderHelper/Info.plist
+      properties:
+        CFBundleDisplayName: Tetherless Decrypt
+        UILaunchScreen: {}
+        CFBundleURLTypes:
+          - CFBundleURLName: com.example.sideloader.helper
+            CFBundleURLSchemes: [sideloaderhelper]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.sideloader.helper
+        SWIFT_VERSION: "5.0"
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
