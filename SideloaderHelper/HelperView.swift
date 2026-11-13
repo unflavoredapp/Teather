@@ -13,7 +13,7 @@ struct HelperView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            VStack(spacing: 20) {
+            VStack(spacing: 22) {
                 header
                 appCard
                 statusCard
@@ -21,8 +21,14 @@ struct HelperView: View {
                 Spacer(minLength: 0)
                 bottomButton
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 16)
             .padding(.bottom, 24)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
+        .task {
+            // Opened from Tetherless after a (mock) decrypt: start right away.
+            if job.autostart && stage == .waiting { await simulate() }
         }
     }
 
@@ -43,18 +49,19 @@ struct HelperView: View {
 
     private var appCard: some View {
         HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
                 .fill(job.color.gradient)
-                .frame(width: 58, height: 58)
-                .overlay(Image(systemName: job.symbol).font(.title2).foregroundStyle(.white))
+                .frame(width: 46, height: 46)
+                .overlay(Image(systemName: job.symbol).font(.body.weight(.semibold)).foregroundStyle(.white))
             VStack(alignment: .leading, spacing: 2) {
-                Text(job.name).font(.title2.weight(.semibold)).foregroundStyle(.white)
-                Text("Version \(job.version)").font(.callout).foregroundStyle(.white.opacity(0.6))
+                Text(job.name).font(.title3.weight(.semibold)).foregroundStyle(.white)
+                Text("Version \(job.version)").font(.subheadline).foregroundStyle(.white.opacity(0.55))
             }
             Spacer()
         }
-        .padding(16)
-        .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(Color(white: 0.13), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private var statusCard: some View {
@@ -71,11 +78,11 @@ struct HelperView: View {
                 Text("Done (mockup)").foregroundStyle(Theme.success)
             }
         }
-        .font(.title2)
+        .font(.title3)
         .foregroundStyle(.white)
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 22)
-        .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(.vertical, 18)
+        .background(Color(white: 0.13), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private var logView: some View {
@@ -95,10 +102,12 @@ struct HelperView: View {
     private var bottomButton: some View {
         switch stage {
         case .waiting:
-            Button("Start") { Task { await simulate() } }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.accent)
-                .controlSize(.large)
+            Button { Task { await simulate() } } label: {
+                Text("Start Decryption").font(.title3).padding(.horizontal, 8).padding(.vertical, 4)
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.roundedRectangle(radius: 6))
+            .tint(Color(red: 0.25, green: 0.53, blue: 1.0))
         case .running:
             ProgressView().tint(.white)
         case .done:
@@ -135,5 +144,10 @@ struct HelperView: View {
             lines.append(line)
         }
         stage = .done
+        // Hand back to Tetherless automatically when we were launched from it.
+        if job.autostart {
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            if let url = URL(string: "sideloader://") { openURL(url) }
+        }
     }
 }

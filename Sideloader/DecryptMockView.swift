@@ -33,7 +33,8 @@ struct MockApp: Identifiable {
             URLQueryItem(name: "name", value: name),
             URLQueryItem(name: "version", value: String(version.dropFirst())),
             URLQueryItem(name: "symbol", value: symbol),
-            URLQueryItem(name: "color", value: colorName)
+            URLQueryItem(name: "color", value: colorName),
+            URLQueryItem(name: "autostart", value: "1")
         ]
         return c.url
     }

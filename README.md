@@ -30,7 +30,7 @@ No Mac? `.github/workflows/build.yml` builds unsigned IPAs on a GitHub macOS run
 - **Pair:** Built-in or Manual connection, Start Pairing with the code prompt, Test Connection, import/remove a pairing file, forget on-device pairing.
 - **Library:** import `.ipa` files (reads name, ID, version), **Install as-is** over the device connection, delete, share.
 - **Files:** browse the app's Documents folder, import, share, delete, add an `.ipa` to the Library.
-- **Settings:** Apple ID card and two-factor prompt flow (UI only), signing-method picker, custom certificate import (`.p12` validated, password in Keychain, `.mobileprovision` name and expiry parsed).
+- **Settings:** Apple ID + Developer Account, Store Access / Manage Store Accounts, Software Update, Custom Certificate (real `.p12`/`.mobileprovision` import with the signing-method picker), notification + background toggles, Default Signing Config, Automate Refresh, Diagnostics and About. Everything under Store Access and Developer Account is UI-only placeholder data.
 
 ## Still to plug in (`Services.swift`)
 

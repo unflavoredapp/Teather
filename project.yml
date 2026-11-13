@@ -110,6 +110,9 @@ targets:
       properties:
         CFBundleDisplayName: Tetherless Decrypt
         UILaunchScreen: {}
+        UIRequiresFullScreen: true
+        UIStatusBarStyle: UIStatusBarStyleLightContent
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         CFBundleURLTypes:
           - CFBundleURLName: com.example.sideloader.helper
             CFBundleURLSchemes: [sideloaderhelper]

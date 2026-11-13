@@ -10,6 +10,7 @@ struct HelperJob: Identifiable, Equatable {
     var version: String
     var symbol: String
     var colorName: String
+    var autostart = false
 
     static let sample = HelperJob(name: "Sample Racer", version: "2.7.1", symbol: "car.fill", colorName: "red")
 
@@ -23,6 +24,7 @@ struct HelperJob: Identifiable, Equatable {
         self.version = value("version") ?? "?"
         self.symbol = value("symbol") ?? "app.fill"
         self.colorName = value("color") ?? "blue"
+        self.autostart = value("autostart") == "1"
     }
 
     init(name: String, version: String, symbol: String, colorName: String) {
